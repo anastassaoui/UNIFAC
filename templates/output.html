@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculation Results</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .result-container {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .result {
+            margin-bottom: 10px;
+        }
+        .plot-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+        img.plot {
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>Calculation Results</h1>
+    <div class="result-container">
+        <div class="result">
+            <strong></strong> {{ a_AB }}
+        </div>
+        <div class="result">
+            <strong></strong> {{ a_BA }}
+        </div>
+        <div class="result">
+            <strong></strong> {{ Dapp }}
+        </div>
+        <div class="result">
+            <strong></strong> {{ error }}
+        </div>
+    </div>
+
+
+    <div class="plot-container">
+        <img class="plot" src="data:image/png;base64,{{ plot_base64 }}" alt="Matplotlib Plot">
+    </div>
+</body>
+</html>
