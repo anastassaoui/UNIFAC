@@ -1,11 +1,8 @@
 from flask import Flask, render_template, request
 import torch
 import torch.optim as optim
-import matplotlib.pyplot as plt
-import mplcursors
+import plotly.graph_objs as go
 import time
-import base64
-from io import BytesIO
 
 app = Flask(__name__)
 
@@ -13,7 +10,7 @@ app = Flask(__name__)
 def calculate_D_AB(params, Xa, Xb, lambda_a, lambda_b, T, q_a, q_b, D_BA0, D_AB0):
     a_AB, a_BA = params
 
-    # Convert input values to tensors
+    # Convertir les valeurs d'entrée en tenseurs
     Xa_tensor = torch.tensor(Xa)
     Xb_tensor = torch.tensor(Xb)
     D_BA0_tensor = torch.tensor(D_BA0)
@@ -24,9 +21,9 @@ def calculate_D_AB(params, Xa, Xb, lambda_a, lambda_b, T, q_a, q_b, D_BA0, D_AB0
     q_b_tensor = torch.tensor(q_b)
     T_tensor = torch.tensor(T)
 
-    # Calculating equation terms
+    # Calcul des termes de l'équation
     D = Xa_tensor*(D_BA0_tensor) + Xb_tensor*torch.log(D_AB0_tensor) + 2*(Xa_tensor*torch.log(Xa_tensor+(Xb_tensor*lambda_b_tensor)/lambda_a_tensor)+Xb_tensor*torch.log(Xb_tensor+(Xa_tensor*lambda_a_tensor)/lambda_b_tensor)) + 2*Xa_tensor*Xb_tensor*((lambda_a_tensor/(Xa_tensor*lambda_a_tensor+Xb_tensor*lambda_b_tensor))*(1-(lambda_a_tensor/lambda_b_tensor)) + (lambda_b_tensor/(Xa_tensor*lambda_a_tensor+Xb_tensor*lambda_b_tensor))*(1-(lambda_b_tensor/lambda_a_tensor))) + Xb_tensor*q_a_tensor*((1-((Xb_tensor*q_b_tensor*torch.exp(-a_BA/T_tensor))/(Xa_tensor*q_a_tensor+Xb_tensor*q_b_tensor*torch.exp(-a_BA/T_tensor)))**2)*(-a_BA/T_tensor)+(1-((Xb_tensor*q_b_tensor)/(Xb_tensor*q_b_tensor+Xa_tensor*q_a_tensor*torch.exp(-a_AB/T_tensor)))**2)*torch.exp(-a_AB/T_tensor)*(-a_AB/T_tensor)) + Xa_tensor*q_b_tensor*((1-((Xa_tensor*q_a_tensor*torch.exp(-a_AB/T_tensor))/(Xa_tensor*q_a_tensor*torch.exp(-a_AB/T_tensor)+Xb_tensor*q_b_tensor))**2)*(-a_AB/T_tensor)+(1-((Xa_tensor*q_a_tensor)/(Xa_tensor*q_a_tensor+Xb_tensor*q_b_tensor*torch.exp(-a_BA/T_tensor)))**2)*torch.exp(-a_BA/T_tensor)*(-a_BA/T_tensor))
-    # Calculating D_AB
+    # Calcul de D_AB
     D_AB = torch.exp(D)
 
     return D_AB
@@ -42,7 +39,7 @@ def index():
 
 @app.route('/calculate', methods=['POST'])
 def calculate():
-    # Get form data
+    # Obtenir les données du formulaire
     D_AB_exp = float(request.form['D_AB_exp'])
     D_BA_exp = float(request.form['D_BA_exp'])
     T = float(request.form['T'])
@@ -53,7 +50,7 @@ def calculate():
     q_a = float(request.form['q_a'])
     q_b = float(request.form['q_b'])
     
-    # Print inputs received
+    # Afficher les entrées reçues
     print("Inputs received:")
     print("D_AB_exp:", D_AB_exp)
     print("D_BA_exp:", D_BA_exp)
@@ -66,20 +63,20 @@ def calculate():
     print("q_b:", q_b)
 
     # Paramètres initiaux
-    params_initial = torch.tensor([0.0, 0.0], requires_grad=True)
+    params_initial = torch.tensor([600.0, 700.0], requires_grad=True)
 
-    # Optimizer (using Adam with a lower learning rate)
-    optimizer = optim.Adam([params_initial], lr=10)
+    # Optimiseur (utilisation de Adam avec un taux d'apprentissage plus bas)
+    optimizer = optim.Adam([params_initial], lr=1)
 
     # Nombre maximal d'itérations
     iteration = 0
 
-    # Début du timer
+    # Début du chronomètre
     start_time = time.time()
 
     # Boucle d'ajustement des paramètres
     while True:
-        # Mise à zéro des gradients
+        # Réinitialiser les gradients
         optimizer.zero_grad()
         # Calcul de l'objectif
         loss = objective(params_initial, D_AB_exp, Xa, Xb, lambda_a, lambda_b, T, q_a, q_b, D_BA_exp, D_AB_exp)
@@ -94,21 +91,21 @@ def calculate():
         # Calcul de D_AB avec les paramètres optimisés
         D_AB_opt = calculate_D_AB([a_AB_opt, a_BA_opt], Xa, Xb, lambda_a, lambda_b, T, q_a, q_b, D_BA_exp, D_AB_exp).item()
 
-        # Convertir D_AB_opt et D_AB_exp en tensors
+        # Convertir D_AB_opt et D_AB_exp en tenseurs
         D_AB_opt_tensor = torch.tensor(D_AB_opt)
         D_AB_exp_tensor = torch.tensor(D_AB_exp)
 
         # Calcul de l'erreur entre D_AB_exp et D_AB_opt
         error = torch.abs(D_AB_opt_tensor - D_AB_exp_tensor)
         # Vérification de convergence
-        if error <= 1e-11:
+        if error <= 1e-10:
             print("Convergence achieved!")
             break
 
         # Incrémentation du nombre d'itérations
         iteration += 1
 
-    # Fin du timer
+    # Fin du chronomètre
     end_time = time.time()
 
     # Calcul de la durée de l'itération
@@ -120,51 +117,32 @@ def calculate():
 
     # Calcul de D_AB pour chaque valeur de Xa
     D_AB_values = [calculate_D_AB([a_AB_opt, a_BA_opt], Xa_val, 1 - Xa_val, lambda_a, lambda_b, T, q_a, q_b, D_BA_exp, D_AB_exp).item() for Xa_val in Xa_values]
-    # Tracer la variation du coefficient de diffusion en fonction de Xa
-    plt.plot(Xa_values.numpy(), D_AB_values, label='D_AB en fonction de Xa')
-    plt.xlabel('Fraction molaire Xa')
-    plt.ylabel('Coefficient de diffusion D_AB (cm^2/s)')
-    plt.title('Variation du coefficient de diffusion en fonction de la fraction molaire Xa')
-    plt.legend()
-    plt.grid(True)
-    mplcursors.cursor(hover=True)
-    plt.show()
-
-    # Calcul de l'erreur entre D_AB_exp et D_AB_values
-    error_values = [torch.abs(torch.tensor(D_AB_value) - D_AB_exp) for D_AB_value in D_AB_values]
+    
+    # Tracer la variation du coefficient de diffusion en fonction de Xa avec Plotly
+    trace = go.Scatter(x=Xa_values.numpy(), y=D_AB_values, mode='lines', name='D_AB en fonction de Xa')
+    plot_data = [trace]
+    plot_layout = go.Layout(title='Variation du coefficient de diffusion en fonction de la fraction molaire Xa',
+                            xaxis=dict(title='Fraction molaire Xa'),
+                            yaxis=dict(title='Coefficient de diffusion D_AB (cm^2/s)'),
+                            legend=dict(x=0, y=1),
+                             width=800,  
+                            height=700,
+                            plot_bgcolor='rgba(10,0,5,0)'
+                           )
+    plot_fig = go.Figure(data=plot_data, layout=plot_layout)
+    plot_div = plot_fig.to_html(full_html=False)
 
     # Affichage des résultats finaux
     a_AB_str = f'a_AB = {a_AB_opt}'
     a_BA_str = f'a_BA = {a_BA_opt}'
     Dapp_str = f'Dapp: {D_AB_opt}'
-    error_str = f'ERROR: {error}'# Generating the Matplotlib plot
-    plt.plot(Xa_values.numpy(), D_AB_values, label='D_AB en fonction de Xa')
-    plt.xlabel('Fraction molaire Xa')
-    plt.ylabel('Coefficient de diffusion D_AB (cm^2/s)')
-    plt.title('Variation du coefficient de diffusion en fonction de la fraction molaire Xa')
-    plt.legend()
-    plt.grid(True)
-    mplcursors.cursor(hover=True)
+    error_str = f'ERROR: {error}'
 
-  # Generating the Matplotlib plot
-    plt.plot(Xa_values.numpy(), D_AB_values, label='D_AB en fonction de Xa')
-    plt.xlabel('Fraction molaire Xa')
-    plt.ylabel('Coefficient de diffusion D_AB (cm^2/s)')
-    plt.title('Variation du coefficient de diffusion en fonction de la fraction molaire Xa')
-    plt.legend()
-    plt.grid(True)
-    mplcursors.cursor(hover=True)
+    # Calcul de la durée de l'itération en millisecondes
+    iteration_duration_ms = iteration_duration * 1000
 
-    # Encoding the plot as a base64 string
-    buffer = BytesIO()
-    plt.savefig(buffer, format='png')
-    buffer.seek(0)
-    plot_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
-    plt.close()
+    # Rendu du modèle avec les résultats du calcul et le graphique Plotly
+    return render_template('output.html', a_AB=a_AB_str, a_BA=a_BA_str, Dapp=Dapp_str, error=error_str, plot_div=plot_div, iterations=iteration, iteration_time=iteration_duration_ms)
 
-    # Rendering the template with the calculation results and the plot
-    return render_template('output.html', a_AB=a_AB_str, a_BA=a_BA_str, Dapp=Dapp_str, error=error_str, plot_base64=plot_base64)
-
-#if __name__ == '__main__':
- #   app.run(debug=False)
-
+if __name__ == '__main__':
+    app.run(debug=False)

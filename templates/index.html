@@ -31,11 +31,14 @@
             margin-bottom: 10px;
             color: #555;
         }
-        input[type="text"] {
+        input[type="text"], select {
             padding: 8px;
             border-radius: 4px;
             border: 1px solid #ccc;
             margin-bottom: 15px;
+        }
+        .manual-input {
+            display: none;
         }
         button {
             background-color: #007bff;
@@ -56,10 +59,29 @@
         <h1>UNIFAC INPUT SHEET</h1>
         <form action="/calculate" method="post">
             <label for="D_AB_exp">D_AB_exp:</label>
-            <input type="text" id="D_AB_exp" name="D_AB_exp">
+            <input type="text" list="D_AB_exp_options" id="D_AB_exp" name="D_AB_exp">
+            <datalist id="D_AB_exp_options">
+                <option label="Propanol/Water" value="1.33e-5">
+                <option label="Ag/Agar" value="18.18e-6">
+                <option label="Al/Agar" value="6.13e-6">
+                <option label="AsV/Agar" value="7.09e-6">
+                <option label="Cd/Agar" value="7.85e-6">
+                <option label="Co/Agar" value="7.66e-6">
+                <option label="CrIII/Agar" value="6.5e-6">
+                <option label="CrVI/Agar" value="10.96e-6">
+                <option label="Cu/Agar" value="8.02e-6">
+                <option label="Fe/Agar" value="7.87e-6">
+                <option label="Hg/Agar" value="10.3e-6">
+                <option label="Mn/Agar" value="7.54e-6">
+            </datalist>
             
             <label for="D_BA_exp">D_BA_exp:</label>
-            <input type="text" id="D_BA_exp" name="D_BA_exp">
+            <input type="text" list="D_BA_exp_options" id="D_BA_exp" name="D_BA_exp">
+            <datalist id="D_BA_exp_options">
+                <option label="Agar/x" value="1.14e-6">
+                <option label="Water/Propanol" value="2.67e-5">
+                <!-- Add more options as needed -->
+            </datalist>
             
             <label for="T">T:</label>
             <input type="text" id="T" name="T">
