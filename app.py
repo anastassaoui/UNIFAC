@@ -165,6 +165,6 @@ def calculate():
     # Rendering the template with the calculation results and the plot
     return render_template('output.html', a_AB=a_AB_str, a_BA=a_BA_str, Dapp=Dapp_str, error=error_str, plot_base64=plot_base64)
 
-#if __name__ == '__main__':
- #   app.run(debug=False)
+if __name__ == '__main__':
+    app.run(debug=False)
 
